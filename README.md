@@ -1,0 +1,1 @@
+- download and extract symbols from: https://www.kaggle.com/datasets/xainano/handwrittenmathsymbols

@@ -1,0 +1,16 @@
+build/
+cmake-build-debug/
+
+*.o
+*.a
+*.so
+*.dll
+
+.idea/
+.vscode/
+
+*.user
+*.bak
+
+symbols/
+results/
