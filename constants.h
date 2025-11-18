@@ -2,6 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <array>
+
+/** FEATURES:
+ *  vertical symmetry
+ *  horizontal symmetry
+ */
+const int FEATURE_LENGTH = 2;
+using FeatureVector = std::array<int, FEATURE_LENGTH>;
 
 inline const std::string SYMBOLS_PATH = "../symbols/";
 
@@ -25,5 +33,5 @@ inline const std::vector<std::string> FOLDER_NAMES = {
     "9",
     "A",
     "b", // to types of b, problem??
-    "c"
+    "C"
 };
