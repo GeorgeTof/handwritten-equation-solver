@@ -157,6 +157,16 @@ void testKnn() {
     showImgNoWait(img, symbolClass);
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
+    symbolClass = FOLDER_NAMES[2];
+    path = SYMBOLS_PATH + symbolClass + "/)_15.jpg";
+    img = imread(path,IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    showImgNoWait(img, symbolClass);
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+
     symbolClass = FOLDER_NAMES[3];
     path = SYMBOLS_PATH + symbolClass + "/+_10.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
@@ -165,7 +175,27 @@ void testKnn() {
         return;
     }
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
-    showImg(img, symbolClass);
+    showImgNoWait(img, symbolClass);
+
+    symbolClass = FOLDER_NAMES[4];
+    path = SYMBOLS_PATH + symbolClass + "/-_87.jpg";
+    img = imread(path,IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+    showImgNoWait(img, symbolClass);
+
+    symbolClass = FOLDER_NAMES[5];
+    path = SYMBOLS_PATH + symbolClass + "/=_199.jpg";
+    img = imread(path,IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+    showImgNoWait(img, symbolClass);
 }
 
 int main () {
