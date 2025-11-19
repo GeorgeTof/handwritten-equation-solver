@@ -11,6 +11,8 @@
 const int FEATURE_LENGTH = 2;
 using FeatureVector = std::array<int, FEATURE_LENGTH>;
 
+const int K = 11;
+
 inline const std::string SYMBOLS_PATH = "../symbols/";
 
 inline const std::vector<std::string> FOLDER_NAMES = {

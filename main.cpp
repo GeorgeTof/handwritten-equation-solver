@@ -11,6 +11,7 @@
 #include <filesystem>
 #include "old_helper_functions.h"
 #include "constants.h"
+#include <unordered_map>
 
 using namespace cv;
 using namespace std;
@@ -70,6 +71,42 @@ void readTrainingData() {
     }
 }
 
+string knnForImage(const Mat& image) {
+    FeatureVector thisVector = getFeaturesFromImage(image);
+
+    vector<pair<float, string>> neighbors;
+
+    int idx = 0;
+    for (const FeatureVector& v: feature_matrix) {
+        float dist = 0.0;
+        for (int i = 0; i < FEATURE_LENGTH; i++) {
+            dist += pow(thisVector[i] - v[i], 2);
+        }
+        dist /= FEATURE_LENGTH;
+        neighbors.push_back(pair(dist, Y[idx++]));
+    }
+
+    sort(neighbors.begin(), neighbors.end());
+
+    std::unordered_map<string, int> classVotes;
+    int mostVotes = -1;
+    string mostVotedClass;
+
+    for (int i = 0; i < K; i++) {
+        string label = neighbors[i].second;
+        classVotes[label]++;
+    }
+
+    for (const auto& [label, count] : classVotes) {
+        if (count > mostVotes) {
+            mostVotes = count;
+            mostVotedClass = label;
+        }
+    }
+
+    return mostVotedClass;
+}
+
 void test() {
     string path = SYMBOLS_PATH + FOLDER_NAMES[0] + "/!_7731.jpg";
     Mat img = imread(path,IMREAD_COLOR);
@@ -80,9 +117,42 @@ void test() {
     showImg(img, "exclamation");
 }
 
+void testKnn() {
+    string symbolClass = FOLDER_NAMES[0];
+    string path = SYMBOLS_PATH + symbolClass + "/!_7731.jpg";
+    Mat img = imread(path, IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    showImgNoWait(img, symbolClass);
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+
+    symbolClass = FOLDER_NAMES[1];
+    path = SYMBOLS_PATH + symbolClass + "/(_6.jpg";
+    img = imread(path,IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    showImgNoWait(img, symbolClass);
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+
+    symbolClass = FOLDER_NAMES[3];
+    path = SYMBOLS_PATH + symbolClass + "/+_10.jpg";
+    img = imread(path,IMREAD_GRAYSCALE);
+    if (img.empty()) {
+        cerr << "ERROR: Failed to load image from path: " << path << endl;
+        return;
+    }
+    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+    showImg(img, symbolClass);
+}
+
 int main () {
     cout << "Hello OpenCV!";
     readTrainingData();
+    testKnn();
     return 0;
 }
 
