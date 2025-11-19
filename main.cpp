@@ -22,11 +22,30 @@ vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
 
 int getVerticalSymmetry(const Mat& image) {
-    return image.rows;  // Todo actual symmetry
+    int left, right;
+    int score = 0;
+    for (left = 0; left < image.cols; ++left) {
+        right = image.cols - 1 - left;
+        if (left >= right) break;
+        for (int i = 0; i < image.rows; ++i)
+            if (image.at<uchar>(i, left) < 255 && image.at<uchar>(i, right) < 255)
+                score ++;
+    }
+    return score;
 }
 
 int getHorizontalSymmetry(const Mat& image) {
-    return image.cols;  // Todo actual symmetry
+    int up, down;
+    int score = 0;
+    for (up = 0; up < image.rows; up++) {
+        down = image.rows - 1 - up;
+        if (down <= up) break;
+        for (int j = 0; j < image.cols; j++) {
+            if (image.at<uchar>(down, j) < 255 && image.at<uchar>(up, j) < 255)
+                score++;
+        }
+    }
+    return score;
 }
 
 FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
