@@ -16,12 +16,6 @@ using namespace cv;
 using namespace std;
 namespace fs = std::filesystem;
 
-/** TODO
- *  preprocessing
- *  extract simple features such as:
- *      symmetry -> vertical, horizontal
- *  knn
-*/
 
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
@@ -34,10 +28,11 @@ int getHorizontalSymmetry(const Mat& image) {
     return image.cols;  // Todo actual symmetry
 }
 
-FeatureVector getFeaturesFromImage(const Mat& image) {
+FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     FeatureVector vector = {};
     vector[0] = getVerticalSymmetry(image);
     vector[1] = getHorizontalSymmetry(image);
+    if (show) cout << vector[0] << " " << vector[1] << endl;
     return vector;
 }
 
@@ -47,6 +42,8 @@ void readImagesFromFolder(const string& class_folder) {
         std::cerr << "ERROR: Folder does not exist: " << folder_path << std::endl;
         return;
     }
+    bool first = true;
+    cout << "Example from class " << class_folder << " ";
     for (const auto& entry : fs::directory_iterator(folder_path)) {
         if (entry.is_regular_file()) {
             if (entry.path().extension() == ".jpg") {
@@ -58,8 +55,9 @@ void readImagesFromFolder(const string& class_folder) {
                 }
                 // showImg(image, image_path);  // just for debug
                 // maybe preprocess input data?
-                feature_matrix.push_back(getFeaturesFromImage(image));
+                feature_matrix.push_back(getFeaturesFromImage(image, first));
                 Y.push_back(class_folder);
+                first = false;
             }
         }
     }
