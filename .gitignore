@@ -1,6 +1,8 @@
 build/
 cmake-build-debug/
 
+CMakeLists.txt
+
 *.o
 *.a
 *.so
