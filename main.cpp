@@ -48,16 +48,41 @@ int getHorizontalSymmetry(const Mat& image) {
     return score;
 }
 
+int getVerticalProjection(const Mat& image) {
+    return 1;
+}
+
+int getHorizontalProjection(const Mat& image) {
+    return 1;
+}
+
+int getSurface(const Mat& image) {
+    return 1;
+}
+
+int getPerimeter(const Mat& image) {
+    return 1;
+}
+
+int getElongation(const Mat& image) {
+    return 1;
+}
+
 FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     FeatureVector vector = {};
     vector[0] = getVerticalSymmetry(image);
     vector[1] = getHorizontalSymmetry(image);
-    if (show) cout << vector[0] << " " << vector[1] << endl;
+    vector[2] = getVerticalProjection(image);
+    vector[3] = getHorizontalProjection(image);
+    vector[4] = getSurface(image);
+    vector[5] = getPerimeter(image);
+    vector[6] = getElongation(image);
+    if (show) cout << vector << endl;
     return vector;
 }
 
 void readImagesFromFolder(const string& class_folder) {
-    string folder_path = SYMBOLS_PATH + class_folder + "/";
+    string folder_path = TRAIN_SYMBOLS_PATH + class_folder + "/";
     if (!fs::exists(folder_path)) {
         std::cerr << "ERROR: Folder does not exist: " << folder_path << std::endl;
         return;
@@ -74,7 +99,6 @@ void readImagesFromFolder(const string& class_folder) {
                     continue;
                 }
                 // showImg(image, image_path);  // just for debug
-                // maybe preprocess input data?
                 feature_matrix.push_back(getFeaturesFromImage(image, first));
                 Y.push_back(class_folder);
                 first = false;
@@ -126,8 +150,8 @@ string knnForImage(const Mat& image) {
     return mostVotedClass;
 }
 
-void test() {
-    string path = SYMBOLS_PATH + FOLDER_NAMES[0] + "/!_7731.jpg";
+void testSingleImage() {
+    string path = TRAIN_SYMBOLS_PATH + FOLDER_NAMES[0] + "/!_7731.jpg";
     Mat img = imread(path,IMREAD_COLOR);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -138,7 +162,7 @@ void test() {
 
 void testKnn() {
     string symbolClass = FOLDER_NAMES[0];
-    string path = SYMBOLS_PATH + symbolClass + "/!_7731.jpg";
+    string path = TRAIN_SYMBOLS_PATH + symbolClass + "/!_7731.jpg";
     Mat img = imread(path, IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -148,7 +172,7 @@ void testKnn() {
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
     symbolClass = FOLDER_NAMES[1];
-    path = SYMBOLS_PATH + symbolClass + "/(_6.jpg";
+    path = TRAIN_SYMBOLS_PATH + symbolClass + "/(_6.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -158,7 +182,7 @@ void testKnn() {
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
     symbolClass = FOLDER_NAMES[2];
-    path = SYMBOLS_PATH + symbolClass + "/)_15.jpg";
+    path = TRAIN_SYMBOLS_PATH + symbolClass + "/)_15.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -168,7 +192,7 @@ void testKnn() {
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
     symbolClass = FOLDER_NAMES[3];
-    path = SYMBOLS_PATH + symbolClass + "/+_10.jpg";
+    path = TRAIN_SYMBOLS_PATH + symbolClass + "/+_10.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -178,7 +202,7 @@ void testKnn() {
     showImgNoWait(img, symbolClass);
 
     symbolClass = FOLDER_NAMES[4];
-    path = SYMBOLS_PATH + symbolClass + "/-_87.jpg";
+    path = TRAIN_SYMBOLS_PATH + symbolClass + "/-_87.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -188,7 +212,7 @@ void testKnn() {
     showImgNoWait(img, symbolClass);
 
     symbolClass = FOLDER_NAMES[5];
-    path = SYMBOLS_PATH + symbolClass + "/=_199.jpg";
+    path = TRAIN_SYMBOLS_PATH + symbolClass + "/=_199.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
