@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
 
-int getVerticalSymmetry(const Mat& image) {
+float getVerticalSymmetry(const Mat& image) {
     int left, right;
     int score = 0;
     for (left = 0; left < image.cols; ++left) {
@@ -31,10 +31,10 @@ int getVerticalSymmetry(const Mat& image) {
             if (image.at<uchar>(i, left) < 255 && image.at<uchar>(i, right) < 255)
                 score ++;
     }
-    return score;
+    return (float)score / (image.cols * image.rows) * 2.0f;
 }
 
-int getHorizontalSymmetry(const Mat& image) {
+float getHorizontalSymmetry(const Mat& image) {
     int up, down;
     int score = 0;
     for (up = 0; up < image.rows; up++) {
@@ -45,7 +45,7 @@ int getHorizontalSymmetry(const Mat& image) {
                 score++;
         }
     }
-    return score;
+    return (float)score / (image.cols * image.rows) * 2.0f;
 }
 
 float getVerticalProjection(const Mat& image) {
