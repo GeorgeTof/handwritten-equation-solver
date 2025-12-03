@@ -48,24 +48,90 @@ int getHorizontalSymmetry(const Mat& image) {
     return score;
 }
 
-int getVerticalProjection(const Mat& image) {
-    return 1;
+float getVerticalProjection(const Mat& image) {
+    int count = 0;
+    for(int i = 0; i < image.rows; i++) {
+        for(int j = 0; j < image.cols; j++) {
+            if (image.at<uchar>(i, j) < 255) {
+                count++;
+                break;
+            }
+        }
+    }
+    return (float)count/image.rows;
 }
 
-int getHorizontalProjection(const Mat& image) {
-    return 1;
+float getHorizontalProjection(const Mat& image) {
+    int count = 0;
+    for(int j = 0; j < image.cols; j++) {
+        for(int i = 0; i < image.rows; i++) {
+            if (image.at<uchar>(i, j) < 255) {
+                count++;
+                break;
+            }
+        }
+    }
+    return (float)count/image.cols;
 }
 
-int getSurface(const Mat& image) {
-    return 1;
+float getSurface(const Mat& image) {
+    int count = 0;
+    for(int i = 0; i < image.rows; i++) {
+        for(int j = 0; j < image.cols; j++) {
+            if (image.at<uchar>(i, j) < 255) {
+                count++;
+            }
+        }
+    }
+
+    return (float)count/(image.rows * image.cols);
 }
 
-int getPerimeter(const Mat& image) {
-    return 1;
+float getPerimeter(const Mat& image) {
+    int count = 0;
+    for(int i = 0; i < image.rows; i++) {
+        for(int j = 0; j < image.cols; j++) {
+            bool isBoundary = false;
+            if(image.at<uchar>(i, j) < 255) {
+                if(i == 0 || i == image.rows - 1 || j == 0 || j == image.cols - 1) {
+                    isBoundary = true;
+                }
+                else if(image.at<uchar>(i-1, j) == 255 ||
+                    image.at<uchar>(i+1, j) == 255 ||
+                    image.at<uchar>(i, j-1) == 255 ||
+                    image.at<uchar>(i, j+1) == 255){
+
+                    isBoundary = true;
+                }
+                if(isBoundary) {count++;}
+            }
+        }
+    }
+
+    return (float)count/(image.rows * image.cols);
 }
 
-int getElongation(const Mat& image) {
-    return 1;
+float getElongation(const Mat& image) {
+    int minRow = image.rows, maxRow = 0;
+    int minCol = image.cols, maxCol = 0;
+
+    for(int i = 0; i < image.rows; i++) {
+        for(int j = 0; j < image.cols; j++) {
+            if(image.at<uchar>(i, j) < 255) {
+                if(i < minRow) minRow = i;
+                if(i > maxRow) maxRow = i;
+                if(j < minCol) minCol = j;
+                if(j > maxCol) maxCol = j;
+            }
+        }
+    }
+
+    int height = maxRow - minRow + 1;
+    int width = maxCol - minCol + 1;
+
+    if(height == 0 || width == 0) return 1.0f;
+
+    return (float)min(height, width)/max(height,width);
 }
 
 FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {

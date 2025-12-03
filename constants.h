@@ -16,11 +16,11 @@
  */
 const int FEATURE_LENGTH = 2 + 2 + 3;
 
-using FeatureVector = std::array<int, FEATURE_LENGTH>;
+using FeatureVector = std::array<float, FEATURE_LENGTH>;
 std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
     os << "[";
     std::copy(v.begin(), v.end(),
-              std::ostream_iterator<int>(os, ", "));
+              std::ostream_iterator<float>(os, ", "));
     os << "\b\b]";
     return os;
 }
