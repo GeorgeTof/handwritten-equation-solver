@@ -15,4 +15,5 @@ CMakeLists.txt
 *.bak
 
 symbols/
+testSymbols/
 results/
