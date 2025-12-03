@@ -162,8 +162,8 @@ void testSingleImage() {
 
 void testKnn() {
     string symbolClass = FOLDER_NAMES[0];
-    string path = TRAIN_SYMBOLS_PATH + symbolClass + "/!_7731.jpg";
-    Mat img = imread(path, IMREAD_GRAYSCALE);
+    string path = TEST_SYMBOLS_PATH + symbolClass + "/(_22.jpg";
+    Mat img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
         return;
@@ -172,7 +172,7 @@ void testKnn() {
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
     symbolClass = FOLDER_NAMES[1];
-    path = TRAIN_SYMBOLS_PATH + symbolClass + "/(_6.jpg";
+    path = TEST_SYMBOLS_PATH + symbolClass + "/)_15.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -182,17 +182,17 @@ void testKnn() {
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
 
     symbolClass = FOLDER_NAMES[2];
-    path = TRAIN_SYMBOLS_PATH + symbolClass + "/)_15.jpg";
+    path = TEST_SYMBOLS_PATH + symbolClass + "/+_10.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
         return;
     }
-    showImgNoWait(img, symbolClass);
     printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
+    showImgNoWait(img, symbolClass);
 
     symbolClass = FOLDER_NAMES[3];
-    path = TRAIN_SYMBOLS_PATH + symbolClass + "/+_10.jpg";
+    path = TEST_SYMBOLS_PATH + symbolClass + "/-_121.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;
@@ -202,17 +202,7 @@ void testKnn() {
     showImgNoWait(img, symbolClass);
 
     symbolClass = FOLDER_NAMES[4];
-    path = TRAIN_SYMBOLS_PATH + symbolClass + "/-_87.jpg";
-    img = imread(path,IMREAD_GRAYSCALE);
-    if (img.empty()) {
-        cerr << "ERROR: Failed to load image from path: " << path << endl;
-        return;
-    }
-    printf("Prediction for %s is %s\n\n", symbolClass.c_str(), knnForImage(img).c_str());
-    showImgNoWait(img, symbolClass);
-
-    symbolClass = FOLDER_NAMES[5];
-    path = TRAIN_SYMBOLS_PATH + symbolClass + "/=_199.jpg";
+    path = TEST_SYMBOLS_PATH + symbolClass + "/=_3.jpg";
     img = imread(path,IMREAD_GRAYSCALE);
     if (img.empty()) {
         cerr << "ERROR: Failed to load image from path: " << path << endl;

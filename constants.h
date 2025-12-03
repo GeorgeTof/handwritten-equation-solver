@@ -28,9 +28,9 @@ std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
 const int K = 11;
 
 inline const std::string TRAIN_SYMBOLS_PATH = "../symbols/";
+inline const std::string TEST_SYMBOLS_PATH = "../testSymbols/";
 
 inline const std::vector<std::string> FOLDER_NAMES = {
-    "!",
     "(",
     ")",
     "+",
