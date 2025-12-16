@@ -21,6 +21,8 @@ namespace fs = std::filesystem;
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
 
+vector<vector<int>> confusion_matrix;
+
 float getVerticalSymmetry(const Mat& image) {
     int left, right;
     int score = 0;
@@ -108,7 +110,7 @@ float getPerimeter(const Mat& image) {
         }
     }
 
-    return (float)count/(image.rows * image.cols);
+    return (float)count/(image.rows * image.cols); //todo: impart la arie in loc de dimensiunea imaginii
 }
 
 float getElongation(const Mat& image) {
@@ -278,10 +280,92 @@ void testKnn() {
     showImgNoWait(img, symbolClass);
 }
 
+int getClassIndex(const string& label) {
+    auto it = find(FOLDER_NAMES.begin(), FOLDER_NAMES.end(), label);
+    if (it != FOLDER_NAMES.end()) {
+        return distance(FOLDER_NAMES.begin(), it);
+    }
+    return -1; // should not be the case
+}
+
+void processTestFolder(const string& class_folder) {
+    string folder_path = TEST_SYMBOLS_PATH + class_folder + "/";
+    int actual_index = getClassIndex(class_folder);
+
+    if (actual_index == -1) {
+        cerr << "Skip unknown class: " << class_folder << endl;
+        return;
+    }
+
+    if (!fs::exists(folder_path)) {
+        cerr << "Folder missing: " << folder_path << endl;
+        return;
+    }
+
+    cout << "Processing " << class_folder << " ";
+    int count = 0;
+
+    for (const auto& entry : fs::directory_iterator(folder_path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".jpg") {
+            string image_path = entry.path().string();
+            Mat image = imread(image_path, IMREAD_GRAYSCALE);
+
+            if (image.empty()) continue;
+
+            string predicted_label = knnForImage(image);
+            int predicted_index = getClassIndex(predicted_label);
+
+            if (predicted_index != -1) {
+                confusion_matrix[actual_index][predicted_index]++;
+            }
+
+            if (++count % 10 == 0) {
+                cout << "." << flush;
+            }
+        }
+    }
+    cout << " Done (" << count << " images)" << endl;
+}
+
+void generateConfusionMatrix() {
+    if (feature_matrix.empty()) {
+        cerr << "CRITICAL ERROR: Training data is empty! KNN will crash." << endl;
+        cerr << "Check your TRAIN_SYMBOLS_PATH and ensure readTrainingData() ran successfully." << endl;
+        return;
+    }
+
+    int n = FOLDER_NAMES.size();
+    confusion_matrix.assign(n, vector<int>(n, 0));
+
+    cout << "Starting confusion matrix generation..." << endl;
+    cout << "Training Size: " << feature_matrix.size() << " samples." << endl;
+
+    for (const string& class_folder : FOLDER_NAMES) {
+        processTestFolder(class_folder);
+    }
+    cout << "Confusion matrix generation complete." << endl;
+}
+
+void printConfusionMatrix() {
+    cout << "\n--- Confusion Matrix ---\n" << endl;
+    for (const auto& row : confusion_matrix) {
+        for (int val : row) {
+            cout << val << "\t";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
 int main () {
     cout << "Hello OpenCV!";
     readTrainingData();
-    testKnn();
+    // testKnn();
+
+    generateConfusionMatrix();
+    printConfusionMatrix();
+
+
     return 0;
 }
 
