@@ -325,11 +325,25 @@ float getElongation(const Mat& image) {
     return (float)min(height, width)/max(height,width);
 }
 
+void computeHuMoments(const Mat& image, FeatureVector& vector, int start_index) {
+    Moments m = moments(image, true);
+
+    double hu[7];
+    HuMoments(m, hu);
+
+    for (int i = 0; i < 4; i++) {
+        if (abs(hu[i]) < 1e-10) {
+            vector[start_index + i] = 0.0f;
+        } else {
+            vector[start_index + i] = (float)(-1.0 * copysign(1.0, hu[i]) * log10(abs(hu[i])));
+        }
+    }
+}
+
 void normalizeVector(FeatureVector& v) {
     if (!is_normalized) return;
 
     for (int i = 0; i < FEATURE_LENGTH; i++) {
-        // Avoid division by zero if stddev is 0 (constant feature)
         if (global_stddevs[i] > 1e-6) {
             v[i] = (v[i] - global_means[i]) / global_stddevs[i];
         } else {
@@ -347,6 +361,9 @@ FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     vector[4] = getSurface(image);
     vector[5] = getPerimeter(image);
     vector[6] = getElongation(image);
+
+    computeHuMoments(image, vector, 7);
+
     if (show) cout << vector << endl;
 
     if (is_normalized) normalizeVector(vector);

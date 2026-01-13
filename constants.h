@@ -13,8 +13,9 @@
  *  surface
  *  perimeter
  *  elongation
+ *  7-10: Hu Moments (h1, h2, h3, h4)
  */
-const int FEATURE_LENGTH = 2 + 2 + 3;
+const int FEATURE_LENGTH = 2 + 2 + 3 + 4;
 
 using FeatureVector = std::array<float, FEATURE_LENGTH>;
 std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
