@@ -29,6 +29,9 @@ std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
 const int TRAIN_LIMIT = 1500;
 const int TEST_LIMIT = 600;
 
+const int CANVAS_SIZE = 45;
+const int CANVAS_SCALE = 10;  // Display scale for easier drawing
+
 const int K = 11;
 
 const double LEARNING_RATE = 0.01;

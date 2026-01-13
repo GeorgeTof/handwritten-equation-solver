@@ -212,6 +212,91 @@ GaussianNaiveBayes nb_model;
 
 vector<vector<int>> confusion_matrix;
 
+// Interactive canvas for drawing
+struct DrawingCanvas {
+    Mat canvas;      // 45x45 internal canvas
+    Mat display;     // Scaled display canvas
+    bool drawing;    // Is mouse button pressed?
+    Point lastPoint; // Last drawn point
+};
+
+DrawingCanvas g_canvas;
+
+void updateDisplay() {
+    resize(g_canvas.canvas, g_canvas.display,
+           Size(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE),
+           0, 0, INTER_NEAREST);
+    imshow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", g_canvas.display);
+}
+
+void mouseCallback(int event, int x, int y, int flags, void* userdata) {
+    // Convert display coordinates to canvas coordinates
+    int cx = x / CANVAS_SCALE;
+    int cy = y / CANVAS_SCALE;
+
+    // Clamp to canvas bounds
+    cx = max(0, min(cx, CANVAS_SIZE - 1));
+    cy = max(0, min(cy, CANVAS_SIZE - 1));
+
+    if (event == EVENT_LBUTTONDOWN) {
+        g_canvas.drawing = true;
+        g_canvas.lastPoint = Point(cx, cy);
+        g_canvas.canvas.at<uchar>(cy, cx) = 0;  // Draw black pixel
+        updateDisplay();
+    }
+    else if (event == EVENT_MOUSEMOVE && g_canvas.drawing) {
+        // Draw line from last point to current point
+        line(g_canvas.canvas, g_canvas.lastPoint, Point(cx, cy), Scalar(0), 1);
+        g_canvas.lastPoint = Point(cx, cy);
+        updateDisplay();
+    }
+    else if (event == EVENT_LBUTTONUP) {
+        g_canvas.drawing = false;
+    }
+}
+
+string predictWithModel(const Mat& image, ModelType model);
+
+void interactivePrediction(ModelType currentModel) {
+    // Initialize white canvas (255 = white, 0 = black for drawn pixels)
+    g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
+    g_canvas.display = Mat(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE, CV_8UC1);
+    g_canvas.drawing = false;
+
+    namedWindow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", WINDOW_AUTOSIZE);
+    setMouseCallback("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", mouseCallback);
+
+    updateDisplay();
+
+    cout << "\n--- Interactive Drawing Mode ---" << endl;
+    cout << "Draw a character using your mouse." << endl;
+    cout << "Press ENTER to predict, 'r' to reset canvas, ESC to cancel." << endl;
+
+    while (true) {
+        int key = waitKey(10);
+
+        if (key == 13 || key == 10) {  // Enter key
+            // Predict using the selected model
+            string prediction = predictWithModel(g_canvas.canvas, currentModel);
+            cout << "\n=========================================" << endl;
+            cout << "PREDICTION: " << prediction << endl;
+            cout << "=========================================" << endl;
+            break;
+        }
+        else if (key == 27) {  // ESC key
+            cout << "Cancelled." << endl;
+            break;
+        }
+        else if (key == 'r' || key == 'R') {  // Reset
+            g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
+            updateDisplay();
+            cout << "Canvas reset." << endl;
+        }
+    }
+
+    destroyWindow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)");
+}
+
 float getVerticalSymmetry(const Mat& image) {
     int left, right;
     int score = 0;
@@ -563,6 +648,19 @@ string predictNaiveBayes(const Mat& image) {
     return nb_model.predict(fv);
 }
 
+string predictWithModel(const Mat& image, ModelType model) {
+    switch (model) {
+        case MODEL_KNN:
+            return knnForImage(image);
+        case MODEL_PERCEPTRON:
+            return predictPerceptron(image);
+        case MODEL_NAIVE_BAYES:
+            return predictNaiveBayes(image);
+        default:
+            return "Unknown";
+    }
+}
+
 void testSingleImage() {
     string path = TRAIN_SYMBOLS_PATH + FOLDER_NAMES[0] + "/!_7731.jpg";
     Mat img = imread(path,IMREAD_COLOR);
@@ -832,6 +930,10 @@ int main () {
             case 'N':
                 currentModel = MODEL_NAIVE_BAYES;
                 cout << "Active Model changed to: " << modelName(currentModel) << endl;
+                break;
+            case 'c':
+                cout << "Using model: " << modelName(currentModel) << endl;
+                interactivePrediction(currentModel);
                 break;
             case 'q':
                 cout << "Exiting..." << endl;
