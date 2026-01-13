@@ -25,6 +25,7 @@ std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
     return os;
 }
 const int TRAIN_LIMIT = 1500;
+const int TEST_LIMIT = 600;
 
 const int K = 11;
 

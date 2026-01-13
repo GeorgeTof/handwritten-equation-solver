@@ -592,6 +592,10 @@ void processTestFolder(const string& class_folder, ModelType type) {
     int count = 0;
 
     for (const auto& entry : fs::directory_iterator(folder_path)) {
+        if (count >= TEST_LIMIT) {
+            break;
+        }
+
         if (entry.is_regular_file() && entry.path().extension() == ".jpg") {
             string image_path = entry.path().string();
             Mat image = imread(image_path, IMREAD_GRAYSCALE);
