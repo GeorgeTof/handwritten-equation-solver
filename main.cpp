@@ -771,6 +771,10 @@ void printLegend() {
     cout << " [k] - Confusion Matrix for KNN" << endl;
     cout << " [p] - Confusion Matrix for Perceptron" << endl;
     cout << " [n] - Confusion Matrix for Naive Bayes" << endl;
+    cout << " [K] - Select model: KNN" << endl;
+    cout << " [P] - Select model: Perceptron" << endl;
+    cout << " [N] - Select model: Naive Bayes" << endl;
+    cout << " [c] - Predict character class" << endl;
     cout << " [q] - Quit" << endl;
     cout << "=========================================" << endl;
 }
@@ -783,6 +787,18 @@ int main () {
     trainNaiveBayes();
 
     printLegend();
+
+    ModelType currentModel = MODEL_KNN;
+    auto modelName = [](ModelType t) -> string {
+        switch(t) {
+            case MODEL_KNN: return "KNN";
+            case MODEL_PERCEPTRON: return "Perceptron";
+            case MODEL_NAIVE_BAYES: return "Naive Bayes";
+            default: return "Unknown";
+        }
+    };
+
+    cout << "Current Model: " << modelName(currentModel) << endl;
 
     char choice;
     while (true) {
@@ -804,6 +820,18 @@ int main () {
                 cout << "\nRunning Naive Bayes Evaluation..." << endl;
                 generateConfusionMatrix(MODEL_NAIVE_BAYES);
                 printConfusionMatrix();
+                break;
+            case 'K':
+                currentModel = MODEL_KNN;
+                cout << "Active Model changed to: " << modelName(currentModel) << endl;
+                break;
+            case 'P':
+                currentModel = MODEL_PERCEPTRON;
+                cout << "Active Model changed to: " << modelName(currentModel) << endl;
+                break;
+            case 'N':
+                currentModel = MODEL_NAIVE_BAYES;
+                cout << "Active Model changed to: " << modelName(currentModel) << endl;
                 break;
             case 'q':
                 cout << "Exiting..." << endl;
