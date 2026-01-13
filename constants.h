@@ -14,8 +14,9 @@
  *  perimeter
  *  elongation
  *  7-10: Hu Moments (h1, h2, h3, h4)
+ *  11-19: Zoning (3x3 grid densities)
  */
-const int FEATURE_LENGTH = 2 + 2 + 3 + 4;
+const int FEATURE_LENGTH = 2 + 2 + 3 + 4 + 9;
 
 using FeatureVector = std::array<float, FEATURE_LENGTH>;
 std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {

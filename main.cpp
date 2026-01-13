@@ -340,6 +340,46 @@ void computeHuMoments(const Mat& image, FeatureVector& vector, int start_index) 
     }
 }
 
+void computeZoningFeatures(const Mat& image, FeatureVector& vector, int start_index) {
+    int gridRows = 3;
+    int gridCols = 3;
+
+    int cellHeight = image.rows / gridRows;
+    int cellWidth = image.cols / gridCols;
+
+    int featureIdx = 0;
+
+    for (int i = 0; i < gridRows; i++) {
+        for (int j = 0; j < gridCols; j++) {
+            int r_start = i * cellHeight;
+            int c_start = j * cellWidth;
+
+            int r_end = (i == gridRows - 1) ? image.rows : (i + 1) * cellHeight;
+            int c_end = (j == gridCols - 1) ? image.cols : (j + 1) * cellWidth;
+
+            if (r_end <= r_start || c_end <= c_start) {
+                vector[start_index + featureIdx] = 0.0f;
+                featureIdx++;
+                continue;
+            }
+
+            cv::Rect roi(c_start, r_start, c_end - c_start, r_end - r_start);
+            cv::Mat cell = image(roi);
+
+            int count = countNonZero(cell < 255);
+            float area = (float)(cell.rows * cell.cols);
+
+            if (area > 0) {
+                vector[start_index + featureIdx] = (float)count / area;
+            } else {
+                vector[start_index + featureIdx] = 0.0f;
+            }
+
+            featureIdx++;
+        }
+    }
+}
+
 void normalizeVector(FeatureVector& v) {
     if (!is_normalized) return;
 
@@ -363,6 +403,8 @@ FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     vector[6] = getElongation(image);
 
     computeHuMoments(image, vector, 7);
+
+    computeZoningFeatures(image, vector, 11);n
 
     if (show) cout << vector << endl;
 
