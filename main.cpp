@@ -203,6 +203,10 @@ public:
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
 
+FeatureVector global_means;
+FeatureVector global_stddevs;
+bool is_normalized = false;
+
 MultiClassPerceptron global_perceptron;
 GaussianNaiveBayes nb_model;
 
@@ -321,6 +325,19 @@ float getElongation(const Mat& image) {
     return (float)min(height, width)/max(height,width);
 }
 
+void normalizeVector(FeatureVector& v) {
+    if (!is_normalized) return;
+
+    for (int i = 0; i < FEATURE_LENGTH; i++) {
+        // Avoid division by zero if stddev is 0 (constant feature)
+        if (global_stddevs[i] > 1e-6) {
+            v[i] = (v[i] - global_means[i]) / global_stddevs[i];
+        } else {
+            v[i] = 0.0;
+        }
+    }
+}
+
 FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     FeatureVector vector = {};
     vector[0] = getVerticalSymmetry(image);
@@ -331,7 +348,53 @@ FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
     vector[5] = getPerimeter(image);
     vector[6] = getElongation(image);
     if (show) cout << vector << endl;
+
+    if (is_normalized) normalizeVector(vector);
+
     return vector;
+}
+
+void performZNormalization() {
+    if (feature_matrix.empty()) return;
+
+    int n_samples = feature_matrix.size();
+
+    global_means.fill(0.0f);
+    global_stddevs.fill(0.0f);
+
+    // 2. Calculate Means
+    for (const auto& v : feature_matrix) {
+        for (int i = 0; i < FEATURE_LENGTH; i++) {
+            global_means[i] += v[i];
+        }
+    }
+    for (int i = 0; i < FEATURE_LENGTH; i++) {
+        global_means[i] /= n_samples;
+    }
+
+    // 3. Calculate StdDevs
+    for (const auto& v : feature_matrix) {
+        for (int i = 0; i < FEATURE_LENGTH; i++) {
+            float diff = v[i] - global_means[i];
+            global_stddevs[i] += diff * diff;
+        }
+    }
+    for (int i = 0; i < FEATURE_LENGTH; i++) {
+        global_stddevs[i] = std::sqrt(global_stddevs[i] / n_samples);
+    }
+
+    for (auto& v : feature_matrix) {
+        for (int i = 0; i < FEATURE_LENGTH; i++) {
+            if (global_stddevs[i] > 1e-6) {
+                v[i] = (v[i] - global_means[i]) / global_stddevs[i];
+            } else {
+                v[i] = 0.0;
+            }
+        }
+    }
+
+    is_normalized = true;
+    cout << "Data normalized (Z-Score). Mean/StdDev calculated." << endl;
 }
 
 void readImagesFromFolder(const string& class_folder) {
@@ -367,10 +430,16 @@ void readImagesFromFolder(const string& class_folder) {
 }
 
 void readTrainingData() {
+    feature_matrix.clear();
+    Y.clear();
+    is_normalized = false;
+
     for (const string& class_folder: FOLDER_NAMES) {
         printf("Reading from from %s\ncurrent feature matrix size %d\n", class_folder.c_str(), feature_matrix.size());
         readImagesFromFolder(class_folder);
     }
+
+    performZNormalization();
 }
 
 string knnForImage(const Mat& image) {
