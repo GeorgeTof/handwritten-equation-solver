@@ -404,7 +404,7 @@ FeatureVector getFeaturesFromImage(const Mat& image, bool show = false) {
 
     computeHuMoments(image, vector, 7);
 
-    computeZoningFeatures(image, vector, 11);n
+    computeZoningFeatures(image, vector, 11);
 
     if (show) cout << vector << endl;
 
