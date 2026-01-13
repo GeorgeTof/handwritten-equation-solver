@@ -12,6 +12,7 @@
 #include "old_helper_functions.h"
 #include "constants.h"
 #include <unordered_map>
+#include <iomanip>
 
 using namespace cv;
 using namespace std;
@@ -382,14 +383,60 @@ void generateConfusionMatrix(ModelType type) {
 }
 
 void printConfusionMatrix() {
+    int n = confusion_matrix.size();
+
     cout << "\n--- Confusion Matrix ---\n" << endl;
-    for (const auto& row : confusion_matrix) {
-        for (int val : row) {
-            cout << val << "\t";
+
+    cout << setw(12) << "Act\\Pred";
+    for (const auto& className : FOLDER_NAMES) {
+        cout << setw(8) << className;
+    }
+    cout << endl;
+    cout << string(12 + 8 * n, '-') << endl;
+
+    for (int i = 0; i < n; i++) {
+        cout << setw(12) << FOLDER_NAMES[i];
+        for (int j = 0; j < n; j++) {
+            cout << setw(8) << confusion_matrix[i][j];
         }
         cout << endl;
     }
     cout << endl;
+
+    cout << "\n--- Accuracy Statistics ---\n" << endl;
+
+    int totalCorrect = 0;
+    int totalSamples = 0;
+
+    for (int i = 0; i < n; i++) {
+        int classCorrect = confusion_matrix[i][i];
+        int classTotal = 0;
+
+        for (int j = 0; j < n; j++) {
+            classTotal += confusion_matrix[i][j];
+        }
+
+        double accuracy = 0.0;
+        if (classTotal > 0) {
+            accuracy = (double)classCorrect / classTotal * 100.0;
+        }
+
+        totalCorrect += classCorrect;
+        totalSamples += classTotal;
+
+        cout << "Class '" << setw(6) << left << FOLDER_NAMES[i] << "': "
+             << right << setw(6) << classCorrect << "/" << setw(6) << classTotal
+             << " = " << fixed << setprecision(2) << setw(6) << accuracy << "%" << endl;
+    }
+
+    double totalAccuracy = 0.0;
+    if (totalSamples > 0) {
+        totalAccuracy = (double)totalCorrect / totalSamples * 100.0;
+    }
+
+    cout << "\nTotal Correct: " << totalCorrect << "/" << totalSamples << endl;
+    cout << "OVERALL ACCURACY: " << fixed << setprecision(2) << totalAccuracy << "%" << endl;
+    cout << "=========================================" << endl;
 }
 
 void printLegend() {
