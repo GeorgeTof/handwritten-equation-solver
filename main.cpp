@@ -156,8 +156,12 @@ void readImagesFromFolder(const string& class_folder) {
         return;
     }
     bool first = true;
+    int count = 0;
     cout << "Example from class " << class_folder << " ";
     for (const auto& entry : fs::directory_iterator(folder_path)) {
+        if (count >= TRAIN_LIMIT) {
+            break;
+        }
         if (entry.is_regular_file()) {
             if (entry.path().extension() == ".jpg") {
                 string image_path = entry.path().string();
@@ -170,9 +174,11 @@ void readImagesFromFolder(const string& class_folder) {
                 feature_matrix.push_back(getFeaturesFromImage(image, first));
                 Y.push_back(class_folder);
                 first = false;
+                count ++;
             }
         }
     }
+    cout << "(" << count << " images loaded)" << endl;
 }
 
 void readTrainingData() {

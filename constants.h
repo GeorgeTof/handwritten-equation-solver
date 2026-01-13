@@ -26,6 +26,13 @@ std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
 }
 
 const int K = 11;
+const int TRAIN_LIMIT = 1500;
+
+enum ModelType {
+    MODEL_KNN,
+    MODEL_PERCEPTRON,
+    MODEL_NAIVE_BAYES
+};
 
 inline const std::string TRAIN_SYMBOLS_PATH = "../symbols/";
 inline const std::string TEST_SYMBOLS_PATH = "../testSymbols/";
