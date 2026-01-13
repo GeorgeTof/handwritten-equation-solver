@@ -24,9 +24,12 @@ std::ostream& operator<<(std::ostream& os, const FeatureVector& v) {
     os << "\b\b]";
     return os;
 }
+const int TRAIN_LIMIT = 1500;
 
 const int K = 11;
-const int TRAIN_LIMIT = 1500;
+
+const double LEARNING_RATE = 0.01;
+const int EPOCHS = 50;
 
 enum ModelType {
     MODEL_KNN,

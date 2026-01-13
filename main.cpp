@@ -18,9 +18,105 @@ using namespace cv;
 using namespace std;
 namespace fs = std::filesystem;
 
+class Perceptron {
+public:
+    vector<double> weights;
+    double bias;
+    double learning_rate;
+
+    Perceptron(int num_features, double lr = LEARNING_RATE)
+        : learning_rate(lr), bias(0.0) {
+        weights.resize(num_features);
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_real_distribution<> dis(-0.01, 0.01);
+        for (int i = 0; i < num_features; i++) weights[i] = dis(gen);
+    }
+
+    double getActivation(const FeatureVector& features) {
+        double activation = bias;
+        for (int i = 0; i < FEATURE_LENGTH; i++) {
+            activation += weights[i] * features[i];
+        }
+        return activation;
+    }
+
+    int predictBinary(const FeatureVector& features) {
+        return getActivation(features) >= 0.0 ? 1 : -1;
+    }
+
+    void trainSample(const FeatureVector& features, int target) {
+        int prediction = predictBinary(features);
+        int error = target - prediction;
+
+        if (error != 0) {
+            for (int i = 0; i < FEATURE_LENGTH; i++) {
+                weights[i] += learning_rate * error * features[i];
+            }
+            bias += learning_rate * error;
+        }
+    }
+};
+
+class MultiClassPerceptron {
+private:
+    vector<Perceptron> classifiers;
+    vector<string> class_labels;
+
+public:
+    MultiClassPerceptron() {
+        class_labels = FOLDER_NAMES;
+        for (size_t i = 0; i < class_labels.size(); i++) {
+            classifiers.push_back(Perceptron(FEATURE_LENGTH));
+        }
+    }
+
+    void train(const vector<FeatureVector>& X, const vector<string>& y) {
+        cout << "Training " << class_labels.size() << " Perceptrons for " << EPOCHS << " epochs..." << endl;
+
+        for (int epoch = 0; epoch < EPOCHS; epoch++) {
+            int total_errors = 0;
+
+            for (size_t i = 0; i < class_labels.size(); i++) {
+                string target_class = class_labels[i];
+
+                for (size_t j = 0; j < X.size(); j++) {
+                    int label = (y[j] == target_class) ? 1 : -1;
+
+                    if (classifiers[i].predictBinary(X[j]) != label) total_errors++;
+
+                    classifiers[i].trainSample(X[j], label);
+                }
+            }
+
+            if ((epoch + 1) % 10 == 0) {
+                cout << "Epoch " << (epoch + 1) << "/" << EPOCHS << " complete." << endl;
+            }
+        }
+        cout << "Training Complete!" << endl;
+    }
+
+    string predict(const FeatureVector& features) {
+        double max_score = -1e9; // Start very low
+        int best_index = -1;
+
+        for (size_t i = 0; i < classifiers.size(); i++) {
+            double score = classifiers[i].getActivation(features);
+            if (score > max_score) {
+                max_score = score;
+                best_index = i;
+            }
+        }
+
+        if (best_index != -1) return class_labels[best_index];
+        return "Unknown";
+    }
+};
 
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
+
+MultiClassPerceptron global_perceptron;
 
 vector<vector<int>> confusion_matrix;
 
@@ -226,7 +322,11 @@ string knnForImage(const Mat& image) {
 }
 
 void trainPerceptron() {
-    cout << "Training Perceptron... (Not implemented yet)" << endl;
+    if (feature_matrix.empty()) {
+        cerr << "Error: No data to train on!" << endl;
+        return;
+    }
+    global_perceptron.train(feature_matrix, Y);
 }
 
 void trainNaiveBayes() {
@@ -234,7 +334,8 @@ void trainNaiveBayes() {
 }
 
 string predictPerceptron(const Mat& image) {
-    return "0";
+    FeatureVector fv = getFeaturesFromImage(image);
+    return global_perceptron.predict(fv);
 }
 
 string predictNaiveBayes(const Mat& image) {
