@@ -113,10 +113,98 @@ public:
     }
 };
 
+class GaussianNaiveBayes {
+private:
+    struct ClassStats {
+        vector<double> means;
+        vector<double> variances;
+        double prior;
+        int sample_count;
+    };
+
+    unordered_map<string, ClassStats> model;
+
+    const double EPSILON = 1e-9;
+
+public:
+    void train(const vector<FeatureVector>& X, const vector<string>& Y) {
+        model.clear();
+        int total_samples = X.size();
+
+        for (size_t i = 0; i < X.size(); i++) {
+            string label = Y[i];
+
+            if (model.find(label) == model.end()) {
+                model[label].means.resize(FEATURE_LENGTH, 0.0);
+                model[label].variances.resize(FEATURE_LENGTH, 0.0);
+                model[label].sample_count = 0;
+            }
+
+            model[label].sample_count++;
+
+            for (int f = 0; f < FEATURE_LENGTH; f++) {
+                model[label].means[f] += X[i][f];
+            }
+        }
+
+        for (auto& [label, stats] : model) {
+            stats.prior = (double)stats.sample_count / total_samples;
+
+            for (int f = 0; f < FEATURE_LENGTH; f++) {
+                stats.means[f] /= stats.sample_count;
+            }
+        }
+
+        for (size_t i = 0; i < X.size(); i++) {
+            string label = Y[i];
+            ClassStats& stats = model[label];
+
+            for (int f = 0; f < FEATURE_LENGTH; f++) {
+                double diff = X[i][f] - stats.means[f];
+                stats.variances[f] += diff * diff;
+            }
+        }
+
+        for (auto& [label, stats] : model) {
+            for (int f = 0; f < FEATURE_LENGTH; f++) {
+                stats.variances[f] /= stats.sample_count;
+                // Add epsilon to avoid division by zero later
+                stats.variances[f] += EPSILON;
+            }
+        }
+
+        cout << "Naive Bayes trained on " << model.size() << " classes." << endl;
+    }
+
+    double calculateLogLikelihood(double x, double mean, double var) {
+        return -0.5 * log(2 * M_PI * var) - pow(x - mean, 2) / (2 * var);
+    }
+
+    string predict(const FeatureVector& features) {
+        string best_class;
+        double max_log_prob = -1e18;
+
+        for (const auto& [label, stats] : model) {
+            double log_prob = log(stats.prior);
+
+            for (int f = 0; f < FEATURE_LENGTH; f++) {
+                log_prob += calculateLogLikelihood(features[f], stats.means[f], stats.variances[f]);
+            }
+
+            if (log_prob > max_log_prob) {
+                max_log_prob = log_prob;
+                best_class = label;
+            }
+        }
+        return best_class;
+    }
+};
+
 vector<FeatureVector> feature_matrix;
 vector<string> Y;  // class labels
 
 MultiClassPerceptron global_perceptron;
+GaussianNaiveBayes nb_model;
 
 vector<vector<int>> confusion_matrix;
 
@@ -330,7 +418,11 @@ void trainPerceptron() {
 }
 
 void trainNaiveBayes() {
-    cout << "Training Naive Bayes... (Not implemented yet)" << endl;
+    if (feature_matrix.empty()) {
+        cerr << "Error: No data to train Naive Bayes!" << endl;
+        return;
+    }
+    nb_model.train(feature_matrix, Y);
 }
 
 string predictPerceptron(const Mat& image) {
@@ -339,7 +431,8 @@ string predictPerceptron(const Mat& image) {
 }
 
 string predictNaiveBayes(const Mat& image) {
-    return "0";
+    FeatureVector fv = getFeaturesFromImage(image);
+    return nb_model.predict(fv);
 }
 
 void testSingleImage() {
