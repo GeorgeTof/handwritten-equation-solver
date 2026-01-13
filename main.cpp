@@ -224,6 +224,22 @@ string knnForImage(const Mat& image) {
     return mostVotedClass;
 }
 
+void trainPerceptron() {
+    cout << "Training Perceptron... (Not implemented yet)" << endl;
+}
+
+void trainNaiveBayes() {
+    cout << "Training Naive Bayes... (Not implemented yet)" << endl;
+}
+
+string predictPerceptron(const Mat& image) {
+    return "0";
+}
+
+string predictNaiveBayes(const Mat& image) {
+    return "0";
+}
+
 void testSingleImage() {
     string path = TRAIN_SYMBOLS_PATH + FOLDER_NAMES[0] + "/!_7731.jpg";
     Mat img = imread(path,IMREAD_COLOR);
@@ -294,7 +310,7 @@ int getClassIndex(const string& label) {
     return -1; // should not be the case
 }
 
-void processTestFolder(const string& class_folder) {
+void processTestFolder(const string& class_folder, ModelType type) {
     string folder_path = TEST_SYMBOLS_PATH + class_folder + "/";
     int actual_index = getClassIndex(class_folder);
 
@@ -318,7 +334,20 @@ void processTestFolder(const string& class_folder) {
 
             if (image.empty()) continue;
 
-            string predicted_label = knnForImage(image);
+            string predicted_label;
+
+            switch (type) {
+                case MODEL_KNN:
+                    predicted_label = knnForImage(image);
+                    break;
+                case MODEL_PERCEPTRON:
+                    predicted_label = predictPerceptron(image);
+                    break;
+                case MODEL_NAIVE_BAYES:
+                    predicted_label = predictNaiveBayes(image);
+                    break;
+            }
+
             int predicted_index = getClassIndex(predicted_label);
 
             if (predicted_index != -1) {
@@ -333,7 +362,7 @@ void processTestFolder(const string& class_folder) {
     cout << " Done (" << count << " images)" << endl;
 }
 
-void generateConfusionMatrix() {
+void generateConfusionMatrix(ModelType type) {
     if (feature_matrix.empty()) {
         cerr << "CRITICAL ERROR: Training data is empty! KNN will crash." << endl;
         cerr << "Check your TRAIN_SYMBOLS_PATH and ensure readTrainingData() ran successfully." << endl;
@@ -347,7 +376,7 @@ void generateConfusionMatrix() {
     cout << "Training Size: " << feature_matrix.size() << " samples." << endl;
 
     for (const string& class_folder : FOLDER_NAMES) {
-        processTestFolder(class_folder);
+        processTestFolder(class_folder, type);
     }
     cout << "Confusion matrix generation complete." << endl;
 }
@@ -363,15 +392,52 @@ void printConfusionMatrix() {
     cout << endl;
 }
 
+void printLegend() {
+    cout << "\n     INSTRUCTIONS      " << endl;
+    cout << "=========================================" << endl;
+    cout << " [k] - Confusion Matrix for KNN" << endl;
+    cout << " [p] - Confusion Matrix for Perceptron" << endl;
+    cout << " [n] - Confusion Matrix for Naive Bayes" << endl;
+    cout << " [q] - Quit" << endl;
+    cout << "=========================================" << endl;
+}
+
 int main () {
-    cout << "Hello OpenCV!";
+    cout << "Loading Data..." << endl;
     readTrainingData();
-    // testKnn();
 
-    generateConfusionMatrix();
-    printConfusionMatrix();
+    trainPerceptron();
+    trainNaiveBayes();
 
+    printLegend();
 
-    return 0;
+    char choice;
+    while (true) {
+        cout << "\n>> Enter command: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 'k':
+                cout << "\nRunning KNN Evaluation..." << endl;
+                generateConfusionMatrix(MODEL_KNN);
+                printConfusionMatrix();
+                break;
+            case 'p':
+                cout << "\nRunning Perceptron Evaluation..." << endl;
+                generateConfusionMatrix(MODEL_PERCEPTRON);
+                printConfusionMatrix();
+                break;
+            case 'n':
+                cout << "\nRunning Naive Bayes Evaluation..." << endl;
+                generateConfusionMatrix(MODEL_NAIVE_BAYES);
+                printConfusionMatrix();
+                break;
+            case 'q':
+                cout << "Exiting..." << endl;
+                return 0;
+            default:
+                cout << "Invalid command." << endl;
+        }
+    }
 }
 
