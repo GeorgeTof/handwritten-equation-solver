@@ -299,7 +299,6 @@ void interactivePrediction(ModelType currentModel) {
     destroyWindow(g_windowName);
 }
 
-// ============== EQUATION MODE ==============
 
 enum DrawAction {
     ACTION_ACCEPT,
@@ -308,13 +307,11 @@ enum DrawAction {
     ACTION_CANCEL
 };
 
-// Convert predicted symbol to equation character
 string symbolToChar(const string& symbol) {
     if (symbol == "times") return "*";
     return symbol;
 }
 
-// Draw character and get user's decision
 pair<string, DrawAction> drawAndDecide(ModelType currentModel, const string& currentEquation) {
     g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
     g_canvas.display = Mat(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE, CV_8UC1);
@@ -329,7 +326,7 @@ pair<string, DrawAction> drawAndDecide(ModelType currentModel, const string& cur
     bool predicted = false;
 
     cout << "\nCurrent equation: " << (currentEquation.empty() ? "(empty)" : currentEquation) << endl;
-    cout << "Draw next character. Press ENTER to predict, 's' to solve, 'r' to reset, ESC to cancel." << endl;
+    cout << "Draw next character. Press ENTER to predict, [s] to solve, [r] to reset, ESC to cancel." << endl;
 
     while (true) {
         int key = waitKey(10) & 0xFF;
@@ -383,8 +380,6 @@ pair<string, DrawAction> drawAndDecide(ModelType currentModel, const string& cur
         }
     }
 }
-
-// ============== EXPRESSION EVALUATOR ==============
 
 class ExpressionParser {
 private:
@@ -561,7 +556,7 @@ void equationMode(ModelType currentModel) {
     cout << "        EQUATION MODE" << endl;
     cout << "=========================================" << endl;
     cout << "Draw symbols to build an equation." << endl;
-    cout << "Supported: digits (0-9), operators (+,-,*), parentheses, = and variables (A,b,C)" << endl;
+    cout << "Supported: digits (0-9), operators (+,-,*), parentheses, = and variables (a,b,c)" << endl;
 
     while (true) {
         auto [prediction, action] = drawAndDecide(currentModel, equation);
@@ -893,7 +888,7 @@ void readTrainingData() {
     is_normalized = false;
 
     for (const string& class_folder: FOLDER_NAMES) {
-        printf("Reading from from %s\ncurrent feature matrix size %d\n", class_folder.c_str(), feature_matrix.size());
+        printf("Reading from from %s\ncurrent feature matrix size %ld\n", class_folder.c_str(), feature_matrix.size());
         readImagesFromFolder(class_folder);
     }
 
