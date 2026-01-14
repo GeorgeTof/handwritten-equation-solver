@@ -221,12 +221,13 @@ struct DrawingCanvas {
 };
 
 DrawingCanvas g_canvas;
+string g_windowName;  // Current window name for drawing
 
 void updateDisplay() {
     resize(g_canvas.canvas, g_canvas.display,
            Size(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE),
            0, 0, INTER_NEAREST);
-    imshow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", g_canvas.display);
+    imshow(g_windowName, g_canvas.display);
 }
 
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
@@ -263,8 +264,9 @@ void interactivePrediction(ModelType currentModel) {
     g_canvas.display = Mat(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE, CV_8UC1);
     g_canvas.drawing = false;
 
-    namedWindow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", WINDOW_AUTOSIZE);
-    setMouseCallback("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)", mouseCallback);
+    g_windowName = "Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)";
+    namedWindow(g_windowName, WINDOW_AUTOSIZE);
+    setMouseCallback(g_windowName, mouseCallback);
 
     updateDisplay();
 
@@ -273,7 +275,7 @@ void interactivePrediction(ModelType currentModel) {
     cout << "Press ENTER to predict, 'r' to reset canvas, ESC to cancel." << endl;
 
     while (true) {
-        int key = waitKey(10);
+        int key = waitKey(10) & 0xFF;
 
         if (key == 13 || key == 10) {  // Enter key
             // Predict using the selected model
@@ -294,7 +296,319 @@ void interactivePrediction(ModelType currentModel) {
         }
     }
 
-    destroyWindow("Draw Character (Press ENTER to predict, ESC to cancel, 'r' to reset)");
+    destroyWindow(g_windowName);
+}
+
+// ============== EQUATION MODE ==============
+
+enum DrawAction {
+    ACTION_ACCEPT,
+    ACTION_RETRY,
+    ACTION_SOLVE,
+    ACTION_CANCEL
+};
+
+// Convert predicted symbol to equation character
+string symbolToChar(const string& symbol) {
+    if (symbol == "times") return "*";
+    return symbol;
+}
+
+// Draw character and get user's decision
+pair<string, DrawAction> drawAndDecide(ModelType currentModel, const string& currentEquation) {
+    g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
+    g_canvas.display = Mat(CANVAS_SIZE * CANVAS_SCALE, CANVAS_SIZE * CANVAS_SCALE, CV_8UC1);
+    g_canvas.drawing = false;
+
+    g_windowName = "Equation Mode";
+    namedWindow(g_windowName, WINDOW_AUTOSIZE);
+    setMouseCallback(g_windowName, mouseCallback);
+    updateDisplay();
+
+    string prediction;
+    bool predicted = false;
+
+    cout << "\nCurrent equation: " << (currentEquation.empty() ? "(empty)" : currentEquation) << endl;
+    cout << "Draw next character. Press ENTER to predict, 's' to solve, 'r' to reset, ESC to cancel." << endl;
+
+    while (true) {
+        int key = waitKey(10) & 0xFF;
+
+        // 's' to solve works at any time
+        if (key == 's' || key == 'S') {
+            destroyWindow(g_windowName);
+            return {"", ACTION_SOLVE};
+        }
+
+        if (!predicted) {
+            if (key == 13 || key == 10) {  // Enter - predict
+                prediction = predictWithModel(g_canvas.canvas, currentModel);
+                string displayChar = symbolToChar(prediction);
+                cout << "\nPredicted: " << displayChar << endl;
+                cout << "[a] Accept  [t] Try again  [s] Solve equation  [ESC] Cancel" << endl;
+                predicted = true;
+            }
+            else if (key == 'r' || key == 'R') {
+                g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
+                updateDisplay();
+                cout << "Canvas reset." << endl;
+            }
+            else if (key == 27) {  // ESC
+                destroyWindow(g_windowName);
+                return {"", ACTION_CANCEL};
+            }
+        }
+        else {
+            // After prediction, wait for user decision
+            if (key == 'a' || key == 'A') {
+                destroyWindow(g_windowName);
+                return {prediction, ACTION_ACCEPT};
+            }
+            else if (key == 't' || key == 'T') {
+                // Reset and try again
+                g_canvas.canvas = Mat(CANVAS_SIZE, CANVAS_SIZE, CV_8UC1, Scalar(255));
+                g_canvas.drawing = false;
+                updateDisplay();
+                predicted = false;
+                cout << "\nDraw again. Press ENTER to predict, 'r' to reset." << endl;
+            }
+            else if (key == 's' || key == 'S') {
+                destroyWindow(g_windowName);
+                return {"", ACTION_SOLVE};
+            }
+            else if (key == 27) {  // ESC
+                destroyWindow(g_windowName);
+                return {"", ACTION_CANCEL};
+            }
+        }
+    }
+}
+
+// ============== EXPRESSION EVALUATOR ==============
+
+class ExpressionParser {
+private:
+    string expr;
+    size_t pos;
+    char variable;      // 'A', 'b', or 'C' if present
+    bool hasVariable;
+
+    char peek() {
+        while (pos < expr.size() && expr[pos] == ' ') pos++;
+        return pos < expr.size() ? expr[pos] : '\0';
+    }
+
+    char get() {
+        char c = peek();
+        if (pos < expr.size()) pos++;
+        return c;
+    }
+
+    // Parse a number or variable, returns pair<coefficient, constant>
+    // For a number n: returns {0, n}
+    // For a variable: returns {1, 0}
+    // For coefficient*variable: handled at higher level
+    pair<double, double> parseNumber() {
+        char c = peek();
+
+        // Check for variable
+        if (c == 'A' || c == 'b' || c == 'C') {
+            get();
+            variable = c;
+            hasVariable = true;
+            return {1.0, 0.0};  // coefficient=1, constant=0
+        }
+
+        // Parse number
+        double num = 0;
+        bool hasDigit = false;
+        while (isdigit(peek())) {
+            num = num * 10 + (get() - '0');
+            hasDigit = true;
+        }
+
+        if (!hasDigit) {
+            throw runtime_error("Expected number at position " + to_string(pos));
+        }
+
+        return {0.0, num};  // coefficient=0, constant=num
+    }
+
+    // Parse factor: number, variable, or (expression)
+    pair<double, double> parseFactor() {
+        if (peek() == '(') {
+            get();  // consume '('
+            auto result = parseExpression();
+            if (peek() != ')') {
+                throw runtime_error("Expected ')'");
+            }
+            get();  // consume ')'
+            return result;
+        }
+        return parseNumber();
+    }
+
+    // Parse term: factor (* factor)*
+    pair<double, double> parseTerm() {
+        auto left = parseFactor();
+
+        while (peek() == '*') {
+            get();  // consume '*'
+            auto right = parseFactor();
+
+            // Multiply: (a*x + b) * (c*x + d) = ac*x^2 + (ad+bc)*x + bd
+            // We only support linear equations, so either left or right must have coef=0
+            if (left.first != 0 && right.first != 0) {
+                throw runtime_error("Quadratic equations not supported");
+            }
+
+            double newCoef = left.first * right.second + left.second * right.first;
+            double newConst = left.second * right.second;
+            left = {newCoef, newConst};
+        }
+
+        return left;
+    }
+
+    // Parse expression: term ((+|-) term)*
+    pair<double, double> parseExpression() {
+        auto left = parseTerm();
+
+        while (peek() == '+' || peek() == '-') {
+            char op = get();
+            auto right = parseTerm();
+
+            if (op == '+') {
+                left = {left.first + right.first, left.second + right.second};
+            } else {
+                left = {left.first - right.first, left.second - right.second};
+            }
+        }
+
+        return left;
+    }
+
+public:
+    ExpressionParser() : pos(0), variable('\0'), hasVariable(false) {}
+
+    // Evaluate a simple arithmetic expression (no variables)
+    double evaluate(const string& expression) {
+        expr = expression;
+        pos = 0;
+        hasVariable = false;
+        variable = '\0';
+
+        auto result = parseExpression();
+
+        if (result.first != 0) {
+            throw runtime_error("Cannot evaluate expression with variables");
+        }
+
+        return result.second;
+    }
+
+    // Solve equation: returns the value of the variable
+    // Equation format: left = right
+    double solveEquation(const string& equation) {
+        size_t eqPos = equation.find('=');
+        if (eqPos == string::npos) {
+            throw runtime_error("No '=' found in equation");
+        }
+
+        string leftStr = equation.substr(0, eqPos);
+        string rightStr = equation.substr(eqPos + 1);
+
+        // Parse left side
+        expr = leftStr;
+        pos = 0;
+        hasVariable = false;
+        auto left = parseExpression();
+        char leftVar = variable;
+        bool leftHasVar = hasVariable;
+
+        // Parse right side
+        expr = rightStr;
+        pos = 0;
+        hasVariable = false;
+        variable = '\0';
+        auto right = parseExpression();
+
+        // Combine: left = right  =>  left - right = 0
+        // (leftCoef - rightCoef) * x + (leftConst - rightConst) = 0
+        double coef = left.first - right.first;
+        double constant = left.second - right.second;
+
+        if (abs(coef) < 1e-10) {
+            if (abs(constant) < 1e-10) {
+                throw runtime_error("Infinite solutions");
+            } else {
+                throw runtime_error("No solution");
+            }
+        }
+
+        // coef * x + constant = 0  =>  x = -constant / coef
+        return -constant / coef;
+    }
+
+    char getVariable() const { return variable; }
+    bool foundVariable() const { return hasVariable; }
+};
+
+void equationMode(ModelType currentModel) {
+    string equation;
+
+    cout << "\n=========================================" << endl;
+    cout << "        EQUATION MODE" << endl;
+    cout << "=========================================" << endl;
+    cout << "Draw symbols to build an equation." << endl;
+    cout << "Supported: digits (0-9), operators (+,-,*), parentheses, = and variables (A,b,C)" << endl;
+
+    while (true) {
+        auto [prediction, action] = drawAndDecide(currentModel, equation);
+
+        if (action == ACTION_CANCEL) {
+            cout << "Equation mode cancelled." << endl;
+            return;
+        }
+        else if (action == ACTION_ACCEPT) {
+            string ch = symbolToChar(prediction);
+            equation += ch;
+            cout << "Added '" << ch << "'. Equation: " << equation << endl;
+        }
+        else if (action == ACTION_RETRY) {
+            // Loop continues, user will draw again
+            continue;
+        }
+        else if (action == ACTION_SOLVE) {
+            if (equation.empty()) {
+                cout << "No equation to solve!" << endl;
+                continue;
+            }
+
+            cout << "\n=========================================" << endl;
+            cout << "Solving: " << equation << endl;
+
+            try {
+                ExpressionParser parser;
+
+                if (equation.find('=') != string::npos) {
+                    // Equation with '=' - solve for variable
+                    double result = parser.solveEquation(equation);
+                    char var = parser.getVariable();
+                    cout << "SOLUTION: " << var << " = " << result << endl;
+                } else {
+                    // Simple arithmetic expression
+                    double result = parser.evaluate(equation);
+                    cout << "RESULT: " << equation << " = " << result << endl;
+                }
+            } catch (const exception& e) {
+                cout << "ERROR: " << e.what() << endl;
+            }
+
+            cout << "=========================================" << endl;
+            return;
+        }
+    }
 }
 
 float getVerticalSymmetry(const Mat& image) {
@@ -873,6 +1187,7 @@ void printLegend() {
     cout << " [P] - Select model: Perceptron" << endl;
     cout << " [N] - Select model: Naive Bayes" << endl;
     cout << " [c] - Predict character class" << endl;
+    cout << " [e] - Equation mode (build & solve)" << endl;
     cout << " [q] - Quit" << endl;
     cout << "=========================================" << endl;
 }
@@ -934,6 +1249,10 @@ int main () {
             case 'c':
                 cout << "Using model: " << modelName(currentModel) << endl;
                 interactivePrediction(currentModel);
+                break;
+            case 'e':
+                cout << "Using model: " << modelName(currentModel) << endl;
+                equationMode(currentModel);
                 break;
             case 'q':
                 cout << "Exiting..." << endl;
